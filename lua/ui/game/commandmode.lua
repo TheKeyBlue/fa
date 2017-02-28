@@ -176,6 +176,31 @@ end
     
 
 function OnCommandIssued(command)
+    -- WARN('*********************************************')
+    -- WARN(command.CommandType)
+    -- WARN(command.LuaParams.TaskName)
+    -- for key,value in command do
+        -- WARN('key -> ')
+        -- WARN(key)
+        -- WARN('value -> ')
+        -- WARN(value)
+    -- end
+    
+    -- WARN('---------------------')
+    -- for key,value in command.Target.Position do
+        -- WARN('key -> ')
+        -- WARN(key)
+        -- WARN('value -> ')
+        -- WARN(value)
+    -- end
+    -- for key,value in command.Units[1] do
+        -- WARN('key -> ')
+        -- WARN(key)
+        -- WARN('value -> ')
+        -- WARN(value)
+    -- end
+    
+    
     if not command.Clear then
         issuedOneCommand = true
     else
@@ -209,6 +234,35 @@ function OnCommandIssued(command)
             local cb = {Func="Rebuild", Args={entity=target.EntityId, Clear=command.Clear}}
             SimCallback(cb, true)
         end
+    elseif command.CommandType == 'Script' and command.LuaParams.TaskName == 'AttackMove' then
+    
+        local view = import('/lua/ui/game/worldview.lua').viewLeft
+        local avgPoint = {0,0}
+        for _,unit in command.Units do
+            avgPoint[1] = avgPoint[1] + unit:GetPosition()[1]
+            avgPoint[2] = avgPoint[2] + unit:GetPosition()[3]
+        end
+        avgPoint[1] = avgPoint[1] / table.getn(command.Units)
+        avgPoint[2] = avgPoint[2] / table.getn(command.Units)
+        
+        avgPoint[1] = command.Target.Position[1] - avgPoint[1]
+        avgPoint[2] = command.Target.Position[3] - avgPoint[2]
+        
+        local rotation = math.atan(avgPoint[1]/avgPoint[2])
+        WARN(rotation)
+        rotation = rotation * 180 / math.pi
+        if avgPoint[2] < 0 then 
+            rotation = rotation + 180
+        end
+        -- rotation = rotation - 90 -- rotate 90 degrees because thats where 0 is
+        WARN('avg')
+        WARN(avgPoint[1])
+        WARN(avgPoint[2])
+        WARN('rot')
+        WARN(rotation)
+        local cb = {Func="AttackMove", Args={Target=command.Target.Position, Rotation = rotation, Clear=command.Clear}}
+        SimCallback(cb, true)
+        -- IssueAggressiveMove(command.Units, command.Target)
 	else	
 		if AddCommandFeedbackByType(command.Target.Position, command.CommandType) == false then
 			AddCommandFeedbackBlip({
@@ -228,6 +282,6 @@ function OnCommandIssued(command)
 			}, 0.75)		
 		end		
 	end
-
+    
 	import('/lua/spreadattack.lua').MakeShadowCopyOrders(command)
 end

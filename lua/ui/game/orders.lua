@@ -149,6 +149,9 @@ end
 -- local logic data
 local orderCheckboxMap = false
 local currentSelection = false
+function GetCurrentSelection()
+    return currentSelection
+end
 
 -- helper function to create order bitmaps
 -- note, your bitmaps must be in /game/orders/ and have the standard button naming convention
@@ -1033,7 +1036,6 @@ end
 local function CreateAltOrders(availableOrders, availableToggles, units)
 -- TODO? it would indeed be easier if the alt orders slot was in the blueprint, but for now try
 -- to determine where they go by using preferred slots
-
     --Look for units in the selection that have special ability buttons
     --If any are found, add the ability information to the standard order table
     if units and categories.ABILITYBUTTON and EntityCategoryFilterDown(categories.ABILITYBUTTON, units) then
@@ -1042,11 +1044,22 @@ local function CreateAltOrders(availableOrders, availableToggles, units)
             if tempBP.Abilities then
                 for abilityIndex, ability in tempBP.Abilities do
                     if ability.Active ~= false then
+                        WARN(abilityIndex)
                         table.insert(availableOrders, abilityIndex)
                         standardOrdersTable[abilityIndex] = table.merged(ability, import('/lua/abilitydefinition.lua').abilities[abilityIndex])
                         standardOrdersTable[abilityIndex].behavior = AbilityButtonBehavior
                     end
                 end
+            end
+        end
+    end
+    if units and table.getn(units) > 0 and EntityCategoryFilterDown(categories.MOBILE - categories.STRUCTURE, units) then
+        for _, availOrder in availableOrders do
+            if availOrder == 'RULEUCC_RetaliateToggle' or EntityCategoryFilterDown(categories.ENGINEER, units) then
+                table.insert(availableOrders, 'AttackMove')
+                standardOrdersTable['AttackMove'] = import('/lua/abilitydefinition.lua').abilities['AttackMove']
+                standardOrdersTable['AttackMove'].behavior = AbilityButtonBehavior
+                break
             end
         end
     end
