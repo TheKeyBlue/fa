@@ -1970,27 +1970,19 @@ local function UpdateGame()
     end
 
     local scenarioInfo
-
     if gameInfo.GameOptions.ScenarioFile and (gameInfo.GameOptions.ScenarioFile ~= "") then
         scenarioInfo = MapUtil.LoadScenario(gameInfo.GameOptions.ScenarioFile)
-        local fine = true
 
         if scenarioInfo and scenarioInfo.map and scenarioInfo.map ~= '' then
             if not RequiredMods.IsPlayable(scenarioInfo) then
-                fine = false
                 AlertHostRequiredModMissing()
                 RequiredMods.CreateInitialDialog(GUI, scenarioInfo)
             end
-        else
-            fine = false
-            AlertHostMapMissing()
-        end
-        
-        if fine then
             GUI.mapView:SetScenario(scenarioInfo)
             ShowMapPositions(GUI.mapView, scenarioInfo)
             ConfigureMapListeners(GUI.mapView, scenarioInfo)
         else
+            AlertHostMapMissing()
             GUI.mapView:Clear()
         end
     end
@@ -2332,11 +2324,13 @@ function CreateSlotsUI(makeLabel)
 
             local associatedMarker = GUI.mapView.startPositions[curRow]
             if event.Type == 'MouseEnter' then
-                if gameInfo.GameOptions['TeamSpawn'] == 'fixed' then
+                if gameInfo.GameOptions['TeamSpawn'] == 'fixed' and associatedMarker.indicator.Play then
                     associatedMarker.indicator:Play()
                 end
             elseif event.Type == 'MouseExit' then
-                associatedMarker.indicator:Stop()
+                if associatedMarker.indicator.Stop then
+                    associatedMarker.indicator:Stop()
+                end
             elseif event.Type == 'ButtonDClick' then
                 DoSlotBehavior(curRow, 'occupy', '')
             end
@@ -2391,7 +2385,7 @@ function CreateSlotsUI(makeLabel)
         -- Hide the marker when the dropdown is hidden
         nameLabel.OnHide = function()
             local associatedMarker = GUI.mapView.startPositions[curRow]
-            if associatedMarker then
+            if associatedMarker and associatedMarker.indicator.Stop then
                 associatedMarker.indicator:Stop()
             end
         end
